@@ -16,44 +16,59 @@ public class Main {
             lines.add(st);
         }
 
-        Map<Integer, Integer> numbersOfGroup = new HashMap();
+        Map<Integer, Integer> groupNumberForLine = new HashMap();
         int maxValue = 0;
         for (int i = 0; i < lines.size(); i++) {
-            if (numbersOfGroup.containsKey(i)) {
-                continue;
-            }
             String st1 = lines.get(i);
-            numbersOfGroup.put(i, maxValue);
-            for (int j = i + 1; j < lines.size(); j++) {
+            int valueToPut = maxValue;
+            if (i == 0) {
+                groupNumberForLine.put(i, maxValue);
+            }
+            List<Integer> allKeysToChange = new ArrayList<>();
+            List<Integer> allValuesToChange = new ArrayList<>();
+            for (int j = i - 1; j >= 0; j--) {
+                if (allValuesToChange.contains(groupNumberForLine.get(j))) {
+                    allKeysToChange.add(j);
+                    continue;
+                }
                 String st2 = lines.get(j);
                 String[] columnsOfSt1 = st1.split(";");
                 String[] columnsOfSt2 = st2.split(";");
                 for (int k = 0; k < Math.min(columnsOfSt1.length, columnsOfSt2.length); k++) {
                     if (columnsOfSt1[k] != null && columnsOfSt1[k].equals(columnsOfSt2[k])) {
-                         Integer jValue = numbersOfGroup.get(j);
-                         if (jValue != null) {
-                             numbersOfGroup.put(i, jValue);
-                             maxValue--;
-                             /*int valueToRebase = numbersOfGroup.get(i);
-                             numbersOfGroup.keySet().stream().filter(key -> numbersOfGroup.get(key) == valueToRebase).
-                                     forEach(key -> numbersOfGroup.put(key, valueToRebase));*/
-
-                         } else {
-                             numbersOfGroup.put(j, maxValue);
-                         }
-                         break;
+                        if(groupNumberForLine.get(j) == null) {
+                            System.out.println("groupNumberForLine is " + groupNumberForLine + "j is " + j);
+                        }
+                        allKeysToChange.add(j);
+                        allValuesToChange.add(groupNumberForLine.get(j));
+                        break;
                     }
                 }
             }
-            maxValue++;
+            if (allKeysToChange.isEmpty()) {
+                groupNumberForLine.put(i, valueToPut);
+                maxValue++;
+            } else {
+                int minValue = allValuesToChange.stream().min(Integer::compareTo).get();
+                allKeysToChange.forEach(k -> groupNumberForLine.put(k, minValue));
+                groupNumberForLine.put(i, minValue);
+            }
         }
-        List<String>[] groups = new List[maxValue];
+
+        Map<Integer, Integer> revertNumbers = new HashMap<>();
+        int count = 0;
+        for (int i = 0; i < groupNumberForLine.size(); i++) {
+            if (!revertNumbers.containsKey(groupNumberForLine.get(i))) {
+                revertNumbers.put(groupNumberForLine.get(i), count++);
+            }
+        }
+        List<String>[] groups = new List[(int)groupNumberForLine.values().stream().distinct().count()];
         for (int i = 0; i < groups.length; i++) {
             groups[i] = new ArrayList<>();
         }
-        for (int i = 0; i < numbersOfGroup.size(); i++) {
-            int x = numbersOfGroup.get(i);
-            groups[x].add(lines.get(i));
+        for (int i = 0; i < groupNumberForLine.size(); i++) {
+            int x = groupNumberForLine.get(i);
+            groups[revertNumbers.get(x)].add(lines.get(i));
         }
 
         Arrays.sort(groups, (list1, list2) -> {
