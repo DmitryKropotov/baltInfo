@@ -2,23 +2,18 @@ package com.company;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 	// write your code here
-        File file = new File("C:\\Data\\projects\\experiment.txt");
-        BufferedReader br = new BufferedReader(new FileReader(file));
-
-        String st;
-        List<String> lines = new ArrayList();
-        while ((st = br.readLine()) != null) {
-            lines.add(st);
-        }
+        List<String> lines = readAndFilterLines();
 
         Map<Integer, Integer> groupNumberForLine = new HashMap();
         int maxValue = 0;
         for (int i = 0; i < lines.size(); i++) {
+            System.out.println(i);
             String st1 = lines.get(i);
             int valueToPut = maxValue;
             if (i == 0) {
@@ -45,21 +40,22 @@ public class Main {
                     }
                 }
             }
+
             if (allKeysToChange.isEmpty()) {
                 groupNumberForLine.put(i, valueToPut);
                 maxValue++;
             } else {
-                int minValue = allValuesToChange.stream().min(Integer::compareTo).get();
-                allKeysToChange.forEach(k -> groupNumberForLine.put(k, minValue));
-                groupNumberForLine.put(i, minValue);
+                int minValueOfValuesToChange = allValuesToChange.stream().min(Integer::compareTo).get();
+                allKeysToChange.forEach(k -> groupNumberForLine.put(k, minValueOfValuesToChange));
+                groupNumberForLine.put(i, minValueOfValuesToChange);
             }
         }
 
-        Map<Integer, Integer> revertNumbers = new HashMap<>();
-        int count = 0;
+        Map<Integer, Integer> mapRandomGroupNumbersToOrderedNumbers = new HashMap<>();
+        int countOfGroups = 0;
         for (int i = 0; i < groupNumberForLine.size(); i++) {
-            if (!revertNumbers.containsKey(groupNumberForLine.get(i))) {
-                revertNumbers.put(groupNumberForLine.get(i), count++);
+            if (!mapRandomGroupNumbersToOrderedNumbers.containsKey(groupNumberForLine.get(i))) {
+                mapRandomGroupNumbersToOrderedNumbers.put(groupNumberForLine.get(i), countOfGroups++);
             }
         }
         List<String>[] groups = new List[(int)groupNumberForLine.values().stream().distinct().count()];
@@ -68,7 +64,7 @@ public class Main {
         }
         for (int i = 0; i < groupNumberForLine.size(); i++) {
             int x = groupNumberForLine.get(i);
-            groups[revertNumbers.get(x)].add(lines.get(i));
+            groups[mapRandomGroupNumbersToOrderedNumbers.get(x)].add(lines.get(i));
         }
 
         Arrays.sort(groups, (list1, list2) -> {
@@ -81,7 +77,12 @@ public class Main {
            }
         });
 
-        PrintWriter writer = new PrintWriter("C:\\Data\\projects\\result.txt");
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter("result.txt");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         writer.println("Число групп - " + groups.length);
         for (int i = 0; i < groups.length; i++) {
             List<String> group = groups[i];
@@ -91,5 +92,33 @@ public class Main {
             }
         }
         writer.close();
+    }
+
+    private static List<String> readAndFilterLines() {
+        File file = new File("lng.csv");
+        BufferedReader br;
+        try{
+            br = new BufferedReader(new FileReader(file));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        String st;
+        List<String> lines = new ArrayList();
+        try {
+            while ((st = br.readLine()) != null) {
+                lines.add(st);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return lines.stream().distinct().filter(s -> {
+            String[] columns = s.split(";");
+            for (int i = 0; i < columns.length; i++) {
+                if (columns[i].matches("\".*\"") && !columns[i].equals("")) {
+                    return false;
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
     }
 }
