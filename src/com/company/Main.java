@@ -13,12 +13,11 @@ public class Main {
         Map<Integer, Integer> groupNumberForLine = new HashMap();
         int maxValue = 0;
         for (int i = 0; i < lines.size(); i++) {
-            System.out.println(i);
             String st1 = lines.get(i);
-            int valueToPut = maxValue;
             if (i == 0) {
                 groupNumberForLine.put(i, maxValue);
             }
+
             List<Integer> allKeysToChange = new ArrayList<>();
             List<Integer> allValuesToChange = new ArrayList<>();
             for (int j = i - 1; j >= 0; j--) {
@@ -31,9 +30,6 @@ public class Main {
                 String[] columnsOfSt2 = st2.split(";");
                 for (int k = 0; k < Math.min(columnsOfSt1.length, columnsOfSt2.length); k++) {
                     if (columnsOfSt1[k] != null && columnsOfSt1[k].equals(columnsOfSt2[k])) {
-                        if(groupNumberForLine.get(j) == null) {
-                            System.out.println("groupNumberForLine is " + groupNumberForLine + "j is " + j);
-                        }
                         allKeysToChange.add(j);
                         allValuesToChange.add(groupNumberForLine.get(j));
                         break;
@@ -42,7 +38,7 @@ public class Main {
             }
 
             if (allKeysToChange.isEmpty()) {
-                groupNumberForLine.put(i, valueToPut);
+                groupNumberForLine.put(i, maxValue);
                 maxValue++;
             } else {
                 int minValueOfValuesToChange = allValuesToChange.stream().min(Integer::compareTo).get();
@@ -80,41 +76,45 @@ public class Main {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter("result.txt");
+            int amountOfGroupsWithMoreOneElement = (int)Arrays.stream(groups).filter(group -> group.size() > 1).count();
+            writer.println("Число групп с более, чем одним элементом - " + amountOfGroupsWithMoreOneElement);
+            for (int i = 0; i < groups.length; i++) {
+                List<String> group = groups[i];
+                writer.println("Группа " + (i+1));
+                for(String element: group) {
+                    writer.println(element);
+                }
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            writer.close();
         }
-        writer.println("Число групп - " + groups.length);
-        for (int i = 0; i < groups.length; i++) {
-            List<String> group = groups[i];
-            writer.println("Группа " + (i+1));
-            for(String element: group) {
-                writer.println(element);
-            }
-        }
-        writer.close();
     }
 
     private static List<String> readAndFilterLines() {
         File file = new File("lng.csv");
-        BufferedReader br;
-        try{
-            br = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        String st;
+        BufferedReader br = null;
         List<String> lines = new ArrayList();
         try {
-            while ((st = br.readLine()) != null) {
-                lines.add(st);
-            }
+            br = new BufferedReader(new FileReader(file));
+            String st;
+               while ((st = br.readLine()) != null) {
+                 lines.add(st);
+               }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
         return lines.stream().distinct().filter(s -> {
             String[] columns = s.split(";");
             for (int i = 0; i < columns.length; i++) {
-                if (columns[i].matches("\".*\"") && !columns[i].equals("")) {
+                if (columns[i].matches("\".*\"") && !columns[i].equals("\"\"")) {
                     return false;
                 }
             }
